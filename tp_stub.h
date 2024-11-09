@@ -1338,7 +1338,7 @@ extern class iTJSBinaryStream * (*TJSCreateBinaryStreamForWrite)(const tTJSStrin
 
 
 //---------------------------------------------------------------------------
-// tTJSBinaryStream constants
+// iTJSBinaryStream constants
 //---------------------------------------------------------------------------
 #define TJS_BS_READ 0
 #define TJS_BS_WRITE 1
@@ -1378,11 +1378,13 @@ public:
 	//-- should re-implement for higher performance
 	virtual tjs_uint64 TJS_INTF_METHOD GetSize() = 0;
 
-	virtual void TJS_INTF_METHOD Destruct() = 0; // must delete itself
+	virtual void TJS_INTF_METHOD Destruct() {
+		delete this;
+	}; // must delete itself
 
-	virtual tjs_uint64 TJS_INTF_METHOD GetPosition() = 0;
-
-	virtual void TJS_INTF_METHOD SetPosition(tjs_uint64 pos) = 0;
+	inline tjs_uint64 TJS_INTF_METHOD GetPosition() {
+		return Seek(0, SEEK_CUR);
+	};
 };
 
 
@@ -2023,13 +2025,13 @@ extern void * TVPImportFuncPtr0ff502d492598d2211405180bfb4d1e1;
 extern void * TVPImportFuncPtrcf5401746759bfe38918087aaab6c57b;
 extern void * TVPImportFuncPtr04e84aa7d8cf0477d55c700164544b38;
 extern void * TVPImportFuncPtr449039d3afbfbd52a63130a3b227a490;
-extern void * TVPImportFuncPtrcf9c9a55784bb685bc2143d9bb6f43e6;
-extern void * TVPImportFuncPtrb2d3b250be6f4cb77146c8c200bff2d4;
+extern void * TVPImportFuncPtref68a0791cca4c9a9787c04c4334d417;
+extern void * TVPImportFuncPtrd18522d56cf699fd1dd8b184c2a1e889;
 extern void * TVPImportFuncPtr347a4fa85af84e223c4b61d33ead694a;
 extern void * TVPImportFuncPtr4ad1dd24b3b4769ee10149eea006af7a;
 extern void * TVPImportFuncPtrb246b17b62d273bdc04e9d9e827f5c74;
 extern void * TVPImportFuncPtr9974ebc6296f925cff55d8bcb2d52ce9;
-extern void * TVPImportFuncPtr0e0c9d9107d8c56b8bc4d4198ae9208a;
+extern void * TVPImportFuncPtr1c0aec6b78369887bfd7a807179791b8;
 extern void * TVPImportFuncPtrc23ece207f6ec2dd7c76ef873047aee3;
 extern void * TVPImportFuncPtr81507020bc646be2f53ab95b9430ba27;
 extern void * TVPImportFuncPtracc0d3861d1b971abcbdda1c075dd681;
@@ -2053,6 +2055,8 @@ extern void * TVPImportFuncPtrfb3b405f8747b54f26c332b9e6af81cd;
 extern void * TVPImportFuncPtrb7ccd11d130f186883c109d2ba17b598;
 extern void * TVPImportFuncPtrcf8ab6c24f25993ccc7663e572ac2991;
 extern void * TVPImportFuncPtrba40ffbca76695b54a02aa8c1f1e047b;
+extern void * TVPImportFuncPtr59b6101c4aef3dd58c5f4e7d66289f88;
+extern void * TVPImportFuncPtrdc4fd55a66925c6989f121a4f2f7d79a;
 extern void * TVPImportFuncPtrc97720e639e95ba5130ce9dd78d30403;
 extern void * TVPImportFuncPtrc5557ac5391b1b831a22e64b65d1746c;
 extern void * TVPImportFuncPtr3243a4c32d4f674f1bbc8d3895257568;
@@ -2364,7 +2368,7 @@ extern void * TVPImportFuncPtr998a5e1aa5cd85689795348fc540a655;
 extern void * TVPImportFuncPtr5f6d263c0d48d03f6eb0dc44c9dd0be2;
 extern void * TVPImportFuncPtrbf363ba3d5b54df9d6df35a518deb6b0;
 extern void * TVPImportFuncPtr6cc8a24cc7ce23179d1d4ccab7a8c97b;
-extern void * TVPImportFuncPtr57258100b04d7d2cc235de44be5fbb93;
+extern void * TVPImportFuncPtr31856aafc5b42a5b0fbfc2f63e2ab461;
 
 
 //---------------------------------------------------------------------------
@@ -4601,10 +4605,6 @@ public:
 */
 
 
-	// for plug-in
-class tTJSBinaryStream;
-
-
 //---------------------------------------------------------------------------
 class iTVPStorageLister // callback class for GetListAt
 {
@@ -4636,8 +4636,8 @@ public:
 	virtual bool TJS_INTF_METHOD CheckExistentStorage(const ttstr &name) = 0;
 		// check file existence
 
-	virtual tTJSBinaryStream * TJS_INTF_METHOD Open(const ttstr & name, tjs_uint32 flags) = 0;
-		// open a storage and return a tTJSBinaryStream instance.
+	virtual iTJSBinaryStream * TJS_INTF_METHOD Open(const ttstr & name, tjs_uint32 flags) = 0;
+		// open a storage and return a iTJSBinaryStream instance.
 		// name does not contain in-archive storage name but
 		// is normalized.
 
@@ -4673,7 +4673,7 @@ struct tTVPXP3ExtractionFilterInfo
 #pragma pack(pop)
 
 #ifndef TVP_tTVPXP3ArchiveExtractionFilter_CONVENTION
-	#ifdef __WIN32__
+	#ifdef _WIN32
 		#define	TVP_tTVPXP3ArchiveExtractionFilter_CONVENTION _stdcall
 	#else
 		#define TVP_tTVPXP3ArchiveExtractionFilter_CONVENTION
@@ -4804,6 +4804,37 @@ typedef void (TJS_USERENTRY *tTVPFinallyBlockFunction)(void *data);
 
 
 
+
+
+
+
+//---------------------------------------------------------------------------
+// tTVPThreadPriority
+//---------------------------------------------------------------------------
+enum tTVPThreadPriority
+{
+	ttpIdle, ttpLowest, ttpLower, ttpNormal, ttpHigher, ttpHighest, ttpTimeCritical
+};
+//---------------------------------------------------------------------------
+
+typedef void (*tTVPThreadFunc)(void *arg);
+
+//---------------------------------------------------------------------------
+// Native Thread Wrapper
+//---------------------------------------------------------------------------
+
+class tTVPNativeThreadIntf
+{
+public:
+	virtual ~tTVPNativeThreadIntf() {};
+	virtual void Start(tTVPThreadFunc func, void *arg, tTVPThreadPriority pri) = 0;
+	virtual void WaitFor() = 0;
+	virtual void SetPriority(tTVPThreadPriority pri) = 0;
+	virtual void SetProcessorNo(int no) = 0;
+#ifdef _WIN32
+	virtual HANDLE GetHandle() const = 0; /* win32 specific */
+#endif
+};
 
 
 
@@ -5725,19 +5756,6 @@ public:
 
 	//! @brief		WindowのiTJSDispatch2インターフェースを取得する
 	virtual iTJSDispatch2 * GetWindowDispatch() = 0;
-
-	//-----------------------------------------------------------------------
-	// interface for OpenGL (need to implement on WindowImpl)
-	//-----------------------------------------------------------------------
-
-public:
-	virtual int GLSurfaceWidth() const = 0;
-	virtual int GLSurfaceHeight() const = 0;
-	virtual int GLDefaultFrameBuffer() const = 0;
-	virtual void GLInit() {};
-	virtual void GLBegin() {};
-	virtual void GLEnd() {};
-
 };
 //---------------------------------------------------------------------------
 
@@ -7932,25 +7950,25 @@ inline void TVPCreateMessageMapFile(const ttstr & filename)
 	typedef void (__stdcall * __functype)(const ttstr &);
 	((__functype)(TVPImportFuncPtr449039d3afbfbd52a63130a3b227a490))(filename);
 }
-inline iTJSBinaryStream * TVPCreateBinaryStreamInterfaceForWrite(const ttstr & name , const ttstr & modestr)
+inline iTJSBinaryStream * TVPCreateBinaryStreamForWrite(const ttstr & name , const ttstr & modestr)
 {
-	if(!TVPImportFuncPtrcf9c9a55784bb685bc2143d9bb6f43e6)
+	if(!TVPImportFuncPtref68a0791cca4c9a9787c04c4334d417)
 	{
-		static char funcname[] = "iTJSBinaryStream * ::TVPCreateBinaryStreamInterfaceForWrite(const ttstr &,const ttstr &)";
-		TVPImportFuncPtrcf9c9a55784bb685bc2143d9bb6f43e6 = TVPGetImportFuncPtr(funcname);
+		static char funcname[] = "iTJSBinaryStream * ::TVPCreateBinaryStreamForWrite(const ttstr &,const ttstr &)";
+		TVPImportFuncPtref68a0791cca4c9a9787c04c4334d417 = TVPGetImportFuncPtr(funcname);
 	}
 	typedef iTJSBinaryStream * (__stdcall * __functype)(const ttstr &, const ttstr &);
-	return ((__functype)(TVPImportFuncPtrcf9c9a55784bb685bc2143d9bb6f43e6))(name, modestr);
+	return ((__functype)(TVPImportFuncPtref68a0791cca4c9a9787c04c4334d417))(name, modestr);
 }
-inline iTJSBinaryStream * TVPCreateBinaryStreamInterfaceForRead(const ttstr & name , const ttstr & modestr)
+inline iTJSBinaryStream * TVPCreateBinaryStreamForRead(const ttstr & name , const ttstr & modestr)
 {
-	if(!TVPImportFuncPtrb2d3b250be6f4cb77146c8c200bff2d4)
+	if(!TVPImportFuncPtrd18522d56cf699fd1dd8b184c2a1e889)
 	{
-		static char funcname[] = "iTJSBinaryStream * ::TVPCreateBinaryStreamInterfaceForRead(const ttstr &,const ttstr &)";
-		TVPImportFuncPtrb2d3b250be6f4cb77146c8c200bff2d4 = TVPGetImportFuncPtr(funcname);
+		static char funcname[] = "iTJSBinaryStream * ::TVPCreateBinaryStreamForRead(const ttstr &,const ttstr &)";
+		TVPImportFuncPtrd18522d56cf699fd1dd8b184c2a1e889 = TVPGetImportFuncPtr(funcname);
 	}
 	typedef iTJSBinaryStream * (__stdcall * __functype)(const ttstr &, const ttstr &);
-	return ((__functype)(TVPImportFuncPtrb2d3b250be6f4cb77146c8c200bff2d4))(name, modestr);
+	return ((__functype)(TVPImportFuncPtrd18522d56cf699fd1dd8b184c2a1e889))(name, modestr);
 }
 inline bool TVPCheckExistentLocalFolder(const ttstr & name)
 {
@@ -7992,15 +8010,15 @@ inline IStream * TVPCreateIStream(const ttstr & name , tjs_uint32 flags)
 	typedef IStream * (__stdcall * __functype)(const ttstr &, tjs_uint32);
 	return ((__functype)(TVPImportFuncPtr9974ebc6296f925cff55d8bcb2d52ce9))(name, flags);
 }
-inline tTJSBinaryStream * TVPCreateBinaryStreamAdapter(IStream * refstream)
+inline iTJSBinaryStream * TVPCreateBinaryStreamAdapter(IStream * refstream)
 {
-	if(!TVPImportFuncPtr0e0c9d9107d8c56b8bc4d4198ae9208a)
+	if(!TVPImportFuncPtr1c0aec6b78369887bfd7a807179791b8)
 	{
-		static char funcname[] = "tTJSBinaryStream * ::TVPCreateBinaryStreamAdapter(IStream *)";
-		TVPImportFuncPtr0e0c9d9107d8c56b8bc4d4198ae9208a = TVPGetImportFuncPtr(funcname);
+		static char funcname[] = "iTJSBinaryStream * ::TVPCreateBinaryStreamAdapter(IStream *)";
+		TVPImportFuncPtr1c0aec6b78369887bfd7a807179791b8 = TVPGetImportFuncPtr(funcname);
 	}
-	typedef tTJSBinaryStream * (__stdcall * __functype)(IStream *);
-	return ((__functype)(TVPImportFuncPtr0e0c9d9107d8c56b8bc4d4198ae9208a))(refstream);
+	typedef iTJSBinaryStream * (__stdcall * __functype)(IStream *);
+	return ((__functype)(TVPImportFuncPtr1c0aec6b78369887bfd7a807179791b8))(refstream);
 }
 inline void TVPThrowPluginUnboundFunctionError(const char * funcname)
 {
@@ -8231,6 +8249,26 @@ inline tjs_uint32 TVPGetCPUType()
 	}
 	typedef tjs_uint32 (__stdcall * __functype)();
 	return ((__functype)(TVPImportFuncPtrba40ffbca76695b54a02aa8c1f1e047b))();
+}
+inline void TVPYieldNativeThread(int Millisecontds = 0)
+{
+	if(!TVPImportFuncPtr59b6101c4aef3dd58c5f4e7d66289f88)
+	{
+		static char funcname[] = "void ::TVPYieldNativeThread(int)";
+		TVPImportFuncPtr59b6101c4aef3dd58c5f4e7d66289f88 = TVPGetImportFuncPtr(funcname);
+	}
+	typedef void (__stdcall * __functype)(int);
+	((__functype)(TVPImportFuncPtr59b6101c4aef3dd58c5f4e7d66289f88))(Millisecontds);
+}
+inline tTVPNativeThreadIntf * TVPCreateNativeThread()
+{
+	if(!TVPImportFuncPtrdc4fd55a66925c6989f121a4f2f7d79a)
+	{
+		static char funcname[] = "tTVPNativeThreadIntf * ::TVPCreateNativeThread()";
+		TVPImportFuncPtrdc4fd55a66925c6989f121a4f2f7d79a = TVPGetImportFuncPtr(funcname);
+	}
+	typedef tTVPNativeThreadIntf * (__stdcall * __functype)();
+	return ((__functype)(TVPImportFuncPtrdc4fd55a66925c6989f121a4f2f7d79a))();
 }
 inline tjs_int TVPGetProcessorNum()
 {
@@ -11342,15 +11380,15 @@ inline void TVPUnregisterDSVideoCodec(const ttstr & name , void * guid , tTVPCre
 	typedef void (__stdcall * __functype)(const ttstr &, void *, tTVPCreateDSFilter , tTVPCreateDSFilter , tTVPCreateDSFilter , void *);
 	((__functype)(TVPImportFuncPtr6cc8a24cc7ce23179d1d4ccab7a8c97b))(name, guid, splitter, video, audio, formatdata);
 }
-inline void * TVPeglGetProcAddress(const char * procname)
+inline void * TVPGLGetProcAddress(const char * procname)
 {
-	if(!TVPImportFuncPtr57258100b04d7d2cc235de44be5fbb93)
+	if(!TVPImportFuncPtr31856aafc5b42a5b0fbfc2f63e2ab461)
 	{
-		static char funcname[] = "void * ::TVPeglGetProcAddress(const char *)";
-		TVPImportFuncPtr57258100b04d7d2cc235de44be5fbb93 = TVPGetImportFuncPtr(funcname);
+		static char funcname[] = "void * ::TVPGLGetProcAddress(const char *)";
+		TVPImportFuncPtr31856aafc5b42a5b0fbfc2f63e2ab461 = TVPGetImportFuncPtr(funcname);
 	}
 	typedef void * (__stdcall * __functype)(const char *);
-	return ((__functype)(TVPImportFuncPtr57258100b04d7d2cc235de44be5fbb93))(procname);
+	return ((__functype)(TVPImportFuncPtr31856aafc5b42a5b0fbfc2f63e2ab461))(procname);
 }
 
 #ifdef __BORLANDC__
