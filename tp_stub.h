@@ -1970,6 +1970,7 @@ extern void * TVPImportFuncPtre0ff899ea4a9cc49a0e3b38deaf93b45;
 extern void * TVPImportFuncPtr4b9c9ac2aafad07af4b16f34e9d4bba2;
 extern void * TVPImportFuncPtrc2e423356d9ca3f26f9c1d294ee9b742;
 extern void * TVPImportFuncPtrc07314686fdf5815ce9b058020da942b;
+extern void * TVPImportFuncPtr45107c5ffc5bf3c84d0ace151e8da8e4;
 extern void * TVPImportFuncPtr4a197be1985d45ee86d5672d24134560;
 extern void * TVPImportFuncPtrdec720a9c3cd2b378f195cf71a9ff8b0;
 extern void * TVPImportFuncPtr5726a5c7af641ebaa504dc9ec8380938;
@@ -7399,6 +7400,16 @@ inline void TVPUnregisterStorageMedia(iTVPStorageMedia * media)
 	}
 	typedef void (__stdcall * __functype)(iTVPStorageMedia *);
 	((__functype)(TVPImportFuncPtrc07314686fdf5815ce9b058020da942b))(media);
+}
+inline iTJSBinaryStream * TVPCreateStream(const ttstr & name , tjs_uint32 flags = 0)
+{
+	if(!TVPImportFuncPtr45107c5ffc5bf3c84d0ace151e8da8e4)
+	{
+		static char funcname[] = "iTJSBinaryStream * ::TVPCreateStream(const ttstr &,tjs_uint32)";
+		TVPImportFuncPtr45107c5ffc5bf3c84d0ace151e8da8e4 = TVPGetImportFuncPtr(funcname);
+	}
+	typedef iTJSBinaryStream * (__stdcall * __functype)(const ttstr &, tjs_uint32);
+	return ((__functype)(TVPImportFuncPtr45107c5ffc5bf3c84d0ace151e8da8e4))(name, flags);
 }
 inline bool TVPIsExistentStorageNoSearch(const ttstr & name)
 {
