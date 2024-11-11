@@ -1322,19 +1322,6 @@ public:
 	virtual void TJS_INTF_METHOD Destruct() = 0; // must delete itself
 };
 //---------------------------------------------------------------------------
-extern iTJSTextReadStream * (*TJSCreateTextStreamForRead)(const tTJSString &name,
-	const tTJSString &modestr);
-extern iTJSTextWriteStream * (*TJSCreateTextStreamForWrite)(const tTJSString &name,
-	const tTJSString &modestr);
-extern class iTJSBinaryStream * (*TJSCreateBinaryStreamForRead)(const tTJSString &name,
-	const tTJSString &modestr);
-extern class iTJSBinaryStream * (*TJSCreateBinaryStreamForWrite)(const tTJSString &name,
-	const tTJSString &modestr);
-//---------------------------------------------------------------------------
-
-
-
-
 
 
 //---------------------------------------------------------------------------
